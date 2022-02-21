@@ -1,0 +1,48 @@
+version: '3.1'
+
+services:
+  phraseapp:
+    build:
+      context: docker/phraseapp
+    volumes:
+      - ./:/var/www/occasions-mobile
+    tty: true
+    stdin_open: true
+  ionic:
+    build:
+      context: docker/ionic
+      args:
+        GITHUB_USERNAME: "${SECOND_HAND_GITHUB_USERNAME}"
+        GITHUB_PASSWORD: "${SECOND_HAND_GITHUB_PASSWORD}"
+    ports:
+      - "3000:3000" # ng dev server
+      - "5000:5000" # node
+      - "8100:8100" # ionic dev server
+      - "9876:9876" # karma
+      - "35729:35729" # livereload
+    volumes:
+      - ./:/var/www/occasions-mobile
+    tty: true
+    stdin_open: true
+      # if targeting a specific node version, use e.g.
+      # image: cypress/base:14
+  # cypress:
+  #   build:
+  #     context: docker/cypress
+  #   volumes:
+  #     - ./:/var/www/occasions-mobile
+  #   depends_on:
+  #     - ionic
+  #   tty: true
+  #   stdin_open: true
+  cypress:
+    image: "cypress/included:3.2.0"
+    depends_on:
+      - ionic
+    environment:
+      # pass base url to test pointing at the web application
+      - CYPRESS_baseUrl=http://ionic:8100
+    # share the current folder as volume to avoid copying
+    working_dir: /e2e
+    volumes:
+      - ./:/e2e
